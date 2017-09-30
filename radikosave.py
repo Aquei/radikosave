@@ -26,6 +26,8 @@ class Radikosave():
         self._server = None
         if urls is None:
             self.urls = []
+        else:
+            self.urls = urls
         self.codec = codec
         self.quality = quality
         self.extention = extention
@@ -385,7 +387,7 @@ def parse_args():
     options['extention'] = args.extention
 
     #オプションのbmpのパス
-    ptions['bmp_path'] = args.path
+    options['bmp_path'] = args.path
 
     return options
 
