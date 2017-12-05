@@ -16,11 +16,12 @@ import os
 import subprocess
 import argparse
 from math import ceil
+import concurrent.futures
 
 class Radikosave():
     """メインクラス"""
 
-    def __init__(self, urls=None, codec='copy', quality=4, extention='m4a', bmp_path=None):
+    def __init__(self, urls=None, codec='copy', quality=4, extention='m4a', bmp_path=None, max_workers=1):
         self._driver = None
         self._proxy = None
         self._server = None
@@ -32,14 +33,30 @@ class Radikosave():
         self.quality = quality
         self.extention = extention
         self.bmp_path = bmp_path
+        self.max_workers = max_workers
 
         
     def save_files(self):
-        for url in self.urls:
-            har, meta = self.get_har_and_meta(url, self.bmp_path)
-            token, m3u8_url = self.get_playlist_info(har)
+        max_workers = self.max_workers
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {}
 
-            self.save_file(meta=meta, token=token, m3u8_url=m3u8_url)            
+            for url in self.urls:
+                har, meta = self.get_har_and_meta(url, self.bmp_path)
+                token, m3u8_url = self.get_playlist_info(har)
+
+                future = executor.submit(self.save_file, meta, token, m3u8_url)
+                futures[future] = url 
+
+
+            for future in concurrent.futures.as_completed(futures):
+                url = futures[future]
+
+                try:
+                    future.exception()
+
+                except Exception as err:
+                    raise err
 
 
 
@@ -77,10 +94,10 @@ class Radikosave():
                 cmplt = subprocess.run(args, check=True, timeout=timeout)
 
             except subprocess.TimeoutExpired as err:
-                print("{timeout}秒待ちましたが、処理が終了しませんでした エラー内容{err}".format(timeout=timeout, err=err.stderr))
+                print("{filename}: {timeout}秒待ちましたが、処理が終了しませんでした エラー内容{err}".format(filename=filename,timeout=timeout, err=err.stderr))
 
             except subprocess.CalledProcessError as err:
-                print("終了ステータス: {status} でプロセスが終了しました エラー内容{err}".format(status=err.returncode, err=err.stderr))
+                print("{filename}: 終了ステータス: {status} でプロセスが終了しました エラー内容{err}".format(status=err.returncode, err=err.stderr, filename=filename))
 
             else:
                 est = int(ceil(time.time() - start))
@@ -378,6 +395,9 @@ def parse_args():
     #ext
     parser.add_argument('-e', '--extention', default='m4a')
 
+    #max_workers
+    parser.add_argument('-w', '--workers', default=1, type=int)
+
     #start parse
     args = parser.parse_args()
 
@@ -385,6 +405,7 @@ def parse_args():
     options['codec'] = args.codec
     options['quality'] = args.quality
     options['extention'] = args.extention
+    options['max_workers'] = args.workers
 
     #オプションのbmpのパス
     options['bmp_path'] = args.path
