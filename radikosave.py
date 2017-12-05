@@ -10,6 +10,7 @@ from datetime import timedelta, datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import selenium.common.exceptions
 from collections import namedtuple
 import re
 import os
@@ -205,6 +206,11 @@ class Radikosave():
                         EC.visibility_of_element_located((By.CSS_SELECTOR, seekbar_selector))
                 )
             except STimeoutException as e:
+                time.sleep(5)
+
+            except selenium.common.exceptions.UnexpectedAlertPresentException as e:
+                alert = driver.switch_to.alert
+                alert.dismiss()
                 time.sleep(5)
 
 
