@@ -70,6 +70,7 @@ class Radikosave():
 
         if has_ff:
             filename = self.get_filename(meta)
+            temp_filename = "downloading_" + filename
             timeout = 60 * 60 * 3 #最大3時間待つ
             print("{}を保存中".format(filename))
             start = time.time()
@@ -90,7 +91,7 @@ class Radikosave():
                         self.codec,
                         '-q:a',
                         str(self.quality),
-                        filename
+                        temp_filename
                 ]
                 cmplt = subprocess.run(args, check=True, timeout=timeout)
 
@@ -102,6 +103,8 @@ class Radikosave():
 
             else:
                 est = int(ceil(time.time() - start))
+                temp = Path(temp_filename)
+                temp.rename(filename)
                 print("{}秒で{}を保存しました".format(est, filename))
 
         else:
