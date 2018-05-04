@@ -78,28 +78,39 @@ class Radikosave():
                 args = [
                         ffname,
                         '-hide_banner',
-                        '-loglevel',
-                        'fatal',
+                        #'-loglevel',
+                        #'fatal',
                         '-nostdin',
                         '-y',
                         '-headers',
                         'X-Radiko-AuthToken: ' + token,
                         '-i',
                         m3u8_url,
-                        '-vn',
-                        '-codec:a',
+                        '-acodec',
                         self.codec,
-                        '-q:a',
-                        str(self.quality),
-                        temp_filename
+                        '-vn',
                 ]
-                cmplt = subprocess.run(args, check=True, timeout=timeout)
+
+                if self.codec.lower() == "copy" and self.extention.lower() in ("m4a", "mka", "mkv", "aac"):
+                    args.append('-bsf:a')
+                    args.append('aac_adtstoasc')
+                else: #エンコードする場合
+                    args.append('-q:a')
+                    args.append(str(self.quality))
+
+
+                args.append(temp_filename)
+
+                cmplt = subprocess.run(args, check=True, timeout=timeout, stderr=subprocess.PIPE)
 
             except subprocess.TimeoutExpired as err:
                 print("{filename}: {timeout}秒待ちましたが、処理が終了しませんでした エラー内容{err}".format(filename=filename,timeout=timeout, err=err.stderr))
 
             except subprocess.CalledProcessError as err:
-                print("{filename}: 終了ステータス: {status} でプロセスが終了しました エラー内容{err}".format(status=err.returncode, err=err.stderr, filename=filename))
+                print("{filename}: 終了ステータス: {status} でプロセスが終了しました エラー内容{err} 実行文:{stmt} stderr: {stderr}".format(status=err.returncode, err=err.stderr, filename=filename, stmt=err.cmd, stderr=err.stderr))
+            
+            except Exception as e:
+                print("補足できない例外: ", e.args)
 
             else:
                 est = int(ceil(time.time() - start))
