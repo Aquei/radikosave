@@ -69,7 +69,8 @@ class Radikosave():
         has_ff, ffname = self.has_ffmpeg()
 
         if has_ff:
-            filename = self.get_filename(meta)
+            limit = 255 - len("downloading_")
+            filename = self.get_filename(meta, limit)
             temp_filename = "downloading_" + filename
             timeout = 60 * 60 * 3 #最大3時間待つ
             print("{}を保存中".format(filename))
@@ -267,7 +268,7 @@ class Radikosave():
                 break
         else:
             #tokenが見つからなかった
-            pass
+            raise Exception("playlist.m3u8 not found")
 
         return token, m3u8_url
 
@@ -349,14 +350,30 @@ class Radikosave():
         return False, ""
 
 
-    def get_filename(self, meta):
+    def get_filename(self, meta, limit=255):
         """ファイル名を返す"""
         if meta.cast_name:
             cast = " ({cast_name})".format(cast_name=meta.cast_name)
         else:
             cast = ""
 
-        filename = "{title}{cast} - {day}.{ext}".format(title=meta.title, cast=cast, day=time.strftime('%m-%d', meta.time_start), ext=self.extention)
+        base = "{title}{cast}".format(title=meta.title, cast=cast)
+        suffix = " - {day}.{ext}".format(day=time.strftime('%m-%d', meta.time_start), ext=self.extention)
+        suffix_len = len(suffix.encode("utf8"))
+
+        temp = ""
+        current_len = suffix_len
+        for x in base:
+            blen = len(x.encode("utf8"))
+            if current_len + blen <= limit:
+                current_len = current_len + blen
+                temp = temp + x
+            else:
+                base = temp
+                break
+
+
+        filename = "{base}{suffix}".format(base=base, suffix=suffix)
 
         return re.sub('[/\\:*?"<>|]', '_', filename)
 
