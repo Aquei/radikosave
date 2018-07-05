@@ -357,7 +357,7 @@ class Radikosave():
         else:
             cast = ""
 
-        base = "{title}{cast}".format(title=meta.title, cast=cast)
+        base = "{title}{cast}".format(title=meta.title, cast=cast).strip()
         suffix = " - {day}.{ext}".format(day=time.strftime('%m-%d', meta.time_start), ext=self.extention)
         suffix_len = len(suffix.encode("utf8"))
 
