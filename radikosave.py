@@ -30,6 +30,7 @@ class Radikosave():
             self.urls = []
         else:
             self.urls = urls
+        self.files = []
         self.codec = codec
         self.quality = quality
         self.extention = extention
@@ -71,6 +72,20 @@ class Radikosave():
         if has_ff:
             limit = 255 - len("downloading_")
             filename = self.get_filename(meta, limit)
+            p = Path('./') / filename
+            if p.exists() or filename in self.files:
+                print("{} is in que".format(filename))
+                for i in range(1, 1000):
+                    name_temp = self.add_file_number(filename, i, limit)
+                    print(i, name_temp)
+                    p = Path('./') / name_temp
+                    if not p.exists() or name_temp not in self.files:
+                        print("{} => {}".format(filename, p.name))
+                        filename = p.name
+                        break
+
+            self.files.append(filename)
+
             temp_filename = "downloading_" + filename
             timeout = 60 * 60 * 3 #最大3時間待つ
             print("{}を保存中".format(filename))
@@ -376,6 +391,19 @@ class Radikosave():
         filename = "{base}{suffix}".format(base=base, suffix=suffix)
 
         return re.sub('[/\\:*?"<>|]', '_', filename)
+
+    def add_file_number(self, name, number, limit=255):
+        number_s = "(" + str(number) + ")"
+        number_s_l = len(number_s)
+        p = Path('./') / name
+        stm = p.stem
+        suffix = p.suffix
+
+        if len(name) + number_s_l > limit:
+            basename = stm[:int(limit)][:-1*(number_s_l + len(suffix))]
+            return basename + number_s + suffix
+        else:
+            return stm + number_s + suffix
 
 
 
