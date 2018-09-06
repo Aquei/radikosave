@@ -134,6 +134,10 @@ class Radikosave():
                 temp.rename(filename)
                 print("{}秒で{}を保存しました".format(est, filename))
 
+                #更新時刻を番組終了時間にセット
+                end_time = time.mktime(meta.time_end)
+                os.utime(temp, tuple(end_time, end_time))
+
         else:
             raise Exception("ffmpeg unavailable")
 
